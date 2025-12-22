@@ -1,0 +1,29 @@
+flowchart TD
+  SaveStart["保存图形数据"]
+  PromptNameS["提示输入文件名（.shp）"]
+  EnsureExtS["确保扩展名 .shp"]
+  OpenFileS["fopen(..., wb)"]
+  OpenFailS["打开失败 -> 提示"]
+  WriteLoop["按项循环写入 graph（写入 graphCount 项）"]
+  CloseS["关闭文件 fclose"]
+  ShowSaved["提示保存成功"]
+
+  LoadStart["加载图形数据"]
+  PromptNameL["提示输入文件名（.shp）"]
+  EnsureExtL["确保扩展名 .shp"]
+  OpenFileL["fopen(..., rb)"]
+  OpenFailL["打开失败 -> 提示"]
+  ReadLoop["按项 fread 到 graph[0..] 直到 EOF 或 MAX_GRAPH"]
+  ReadFail["读取失败或无项 -> 提示"]
+  UpdateState["设置 graphCount = readCount; i = graphCount % MAX_GRAPH"]
+  DrawLoaded["drawGraphToCanvas(readCount)"]
+  ShowLoaded["提示加载成功"]
+
+  SaveStart --> PromptNameS --> EnsureExtS --> OpenFileS
+  OpenFileS -->|失败| OpenFailS
+  OpenFileS -->|成功| WriteLoop --> CloseS --> ShowSaved
+
+  LoadStart --> PromptNameL --> EnsureExtL --> OpenFileL
+  OpenFileL -->|失败| OpenFailL
+  OpenFileL -->|成功| ReadLoop -->|readCount==0| ReadFail
+  ReadLoop -->|readCount>0| UpdateState --> DrawLoaded --> ShowLoaded --> CloseS

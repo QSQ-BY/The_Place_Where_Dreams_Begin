@@ -1,0 +1,26 @@
+flowchart TD
+  StartPoly["进入多边形绘制"]
+  InputSides["输入边数 sides (3-9)"]
+  CheckSides{"合法?"}
+  InputFill["输入是否填充"]
+  InputVertices["逐点输入 2*sides 个坐标"]
+  VertCheck{"每个坐标合法?"}
+  SelectColor["选择颜色"]
+  SaveSnap["saveSnapshot()"]
+  DrawChoice{"填充?"}
+  FillPoly["setfillcolor + fillpoly"]
+  StrokePoly["逐边 moveto/lineto"]
+  StoreGraph["写入 graph[i] (type/points/color)"]
+  IncIndex["i = (i+1)%MAX_GRAPH; graphCount++ if not full"]
+  NextChoice["询问：返回画板 或 继续绘图"]
+  EndPoly["退出绘图"]
+  StartPoly --> InputSides --> CheckSides
+  CheckSides -->|否| EndPoly
+  CheckSides -->|是| InputFill --> InputVertices --> VertCheck
+  VertCheck -->|否| EndPoly
+  VertCheck -->|是| SelectColor --> SaveSnap --> DrawChoice
+  DrawChoice -->|是| FillPoly --> StoreGraph
+  DrawChoice -->|否| StrokePoly --> StoreGraph
+  StoreGraph --> IncIndex --> NextChoice
+  NextChoice -->|返回| EndPoly
+  NextChoice -->|继续| StartPoly

@@ -1,0 +1,76 @@
+flowchart TD
+  %% 更详细的撤销/重做流程图，展示栈操作、容量检查和资源管理
+  Start["用户执行会改变画布的操作（如绘制、填充、加载等）"]
+
+  subgraph SaveSnapshotFlow ["保存快照流程"]
+    SS["调用 saveSnapshot()"]
+    ClearRedo["清空 redo 栈：释放 redo 中的 PIMAGE（delimage）并将 redoTop=0"]
+    CheckUndoCap{"undoTop == MAX_SNAPSHOTS ?"}
+    IfFullDel["栈已满：删除最早的快照 delimage(snapshotStack[0])<br/>并将其它元素左移（索引--）"]
+    CreateImg["创建新快照 PIMAGE img = newimage(w,h); getimage(img,...)"]
+    PushUndo["将 img push 到 undo 栈 snapshotStack[snapshotTop++] = img"]
+    NotifySave["可选：UI 提示'已保存快照'"]
+
+    SS --> ClearRedo --> CheckUndoCap
+    CheckUndoCap -->|是| IfFullDel --> CreateImg
+    CheckUndoCap -->|否| CreateImg
+    CreateImg --> PushUndo --> NotifySave
+  end
+
+  %% 撤销流程
+  subgraph UndoFlow ["撤销流程"]
+    TriggerUndo["用户触发 Undo（undoLast）"]
+    CheckUndoEmpty{"undoTop == 0 ?"}
+    NoUndo["无可撤回操作：提示 '无可撤回项' 返回"]
+
+    SaveCurrentToRedo["把当前画布快照保存到 redo：<br/>PIMAGE cur=newimage(); getimage(cur,...);"]
+
+    PopUndo["从 undo 弹出最近快照：PIMAGE img = snapshotStack[--snapshotTop]"]
+    Restore["用 putimage(0,0,img) 恢复画布（不释放 img，因为可能重做）"]
+    NotifyUndo["UI 提示'已撤回'"]
+
+    TriggerUndo --> CheckUndoEmpty
+    CheckUndoEmpty -->|是| NoUndo
+    CheckUndoEmpty -->|否| SaveCurrentToRedo --> PopUndo --> Restore --> NotifyUndo
+  end
+
+  %% 重做流程
+  subgraph RedoFlow ["重做流程"]
+    TriggerRedo["用户触发 Redo（redoLast）"]
+    CheckRedoEmpty{"redoTop == 0 ?"}
+    NoRedo["无可重做项：提示 '无可重做项' 返回"]
+
+    SaveCurrentToUndo["把当前画面快照保存到 undo：<br/>PIMAGE cur=newimage(); getimage(cur,...);"]
+
+    PopRedo["从 redo 弹出最近快照：PIMAGE img = redoStack[--redoTop]"]
+    RestoreRedo["用 putimage(0,0,img) 恢复画布"]
+    NotifyRedo["UI 提示'已重做'"]
+
+    TriggerRedo --> CheckRedoEmpty
+    CheckRedoEmpty -->|是| NoRedo
+    CheckRedoEmpty -->|否| SaveCurrentToUndo --> PopRedo --> RestoreRedo --> NotifyRedo
+  end
+
+  %% 连接整体
+  Start --> SS
+  Start --> TriggerUndo
+  Start --> TriggerRedo
+
+  style SaveSnapshotFlow fill:#f9f,stroke:#333,stroke-width:1px
+  style UndoFlow fill:#ff9,stroke:#333,stroke-width:1px
+  style RedoFlow fill:#9ff,stroke:#333,stroke-width:1px
+
+  classDef note fill:#fff7d6,stroke:#aaa,stroke-dasharray: 3 3;
+  NotifySave:::note
+  NotifyUndo:::note
+  NotifyRedo:::note
+
+  %% 附注：资源管理与一致性要求
+  subgraph Notes ["要点"]
+    A["1) 每次 newimage 对应 delimage，避免资源泄露"]
+    B["2) 新操作（saveSnapshot）应清空 redo 栈，避免语义冲突"]
+    C["3) 栈满时删除最早快照并释放内存以腾出空间"]
+  end
+  SaveSnapshotFlow --> Notes
+  UndoFlow --> Notes
+  RedoFlow --> Notes

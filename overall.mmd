@@ -1,0 +1,23 @@
+flowchart TD
+  Start["启动程序"]
+  Init["初始化图形库 initgraph()"]
+  Read["readFile(): 询问是否加载画布"]
+  Menu["进入 menu() 主菜单循环"]
+  Draw["作画 -> draw()"]
+  Clear["清屏 -> cleardevice()"]
+  SaveCanvas["保存画布 -> saveCanvasAs()"]
+  LoadCanvas["加载画布 -> loadCanvasWithPrompt()"]
+  Query["查询图形 -> queryShapes()"]
+  SaveShapes["保存图形数据 -> saveShapesToFile()"]
+  LoadShapes["加载图形数据 -> loadShapesFromFile()"]
+  Exit["退出 -> 询问是否保存 -> 结束"]
+
+  Start --> Init --> Read --> Menu
+  Menu -->|"选择: 作画"| Draw
+  Menu -->|"选择: 清屏"| Clear
+  Menu -->|"选择: 保存画布"| SaveCanvas
+  Menu -->|"选择: 加载画布"| LoadCanvas
+  Menu -->|"选择: 查询图形"| Query
+  Menu -->|"选择: 保存图形数据"| SaveShapes
+  Menu -->|"选择: 加载图形数据"| LoadShapes
+  Menu -->|"选择: 退出"| Exit
